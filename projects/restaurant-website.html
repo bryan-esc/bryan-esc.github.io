@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurant Website Case Study · Bryan Escalante</title>
+  <meta name="description" content="Case study: a from-scratch, bilingual website for a real Austin restaurant, with a serverless contact form and a custom-domain deployment.">
+  <meta property="og:title" content="Building a Real Website for a Family Restaurant · Bryan Escalante">
+  <meta property="og:description" content="A from-scratch, bilingual site for a real Austin restaurant, built mostly by hand, with a real serverless backend and a real deployment.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+  <!-- ================= NAV ================= -->
+  <header class="nav">
+    <div class="container nav-inner">
+      <a href="../index.html" class="logo">BE</a>
+      <nav>
+        <a href="../index.html#about">About</a>
+        <a href="../index.html#experience">Experience</a>
+        <a href="../index.html#projects">Projects</a>
+        <a href="../index.html#skills">Skills</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="case">
+
+    <!-- ================= TITLE ================= -->
+    <section class="container case-hero">
+      <a href="../index.html#projects" class="back-link">← Back to Projects</a>
+      <p class="eyebrow">Case Study · Web Development</p>
+      <h1>Building a Real Website for a Family Restaurant</h1>
+      <p class="case-subtitle">
+        A from-scratch, bilingual site for a real Austin restaurant, built mostly by
+        hand, with a real serverless backend and a real deployment.
+      </p>
+      <div class="tags">
+        <span>HTML</span><span>CSS</span><span>JavaScript</span><span>Netlify Functions</span><span>Resend API</span><span>DNS</span>
+      </div>
+      <div class="buttons">
+        <a href="https://angiesmexicanaustin.com" class="btn primary" target="_blank">Live Site →</a>
+        <a href="https://idyllic-rabanadas-9dbc1b.netlify.app/" class="btn" target="_blank">Netlify Link →</a>
+        <a href="https://github.com/bryan-esc/RestaurantWebsite" class="btn" target="_blank">GitHub →</a>
+      </div>
+    </section>
+
+    <!-- ================= BACKGROUND ================= -->
+    <section class="container">
+      <h2>Background &amp; Motivation</h2>
+      <p>
+        Angie's Mexican Restaurant is a real, family-run Tex-Mex spot in Austin, TX
+        that's been open since 1993, and until this project it had no website of its
+        own, just scattered listings on Yelp, Google, and Uber Eats. I'd worked there as
+        a server, knew the menu and the regulars, and wanted to build the restaurant a
+        real site.
+      </p>
+      <p>
+        Coming off a previous project that leaned heavily on machine learning, I
+        deliberately wanted this one to be different: plain, understandable code I wrote
+        mostly myself, with research built into the process instead of just shipping the
+        first thing that worked.
+      </p>
+    </section>
+
+    <!-- ================= CONSTRAINTS ================= -->
+    <section class="container">
+      <h2>The Constraints</h2>
+      <ul class="case-list">
+        <li><strong>No framework.</strong> Plain HTML, CSS, and JavaScript, on purpose. No React, no static site generator, no build step. I wanted to be able to read every line and know what it did.</li>
+        <li><strong>Real customers.</strong> This wasn't a demo. The menu, hours, and prices all had to be accurate, and any real Google or Yelp reviews had to be reproduced faithfully rather than lightly rewritten, to stay on the right side of FTC guidance on testimonials.</li>
+        <li><strong>A large menu.</strong> 18 categories and 104 items, several with size variants or à la carte add-ons, which made "just list everything" navigation a real usability problem.</li>
+        <li><strong>Bilingual guests.</strong> Austin's East Side has a large Spanish-speaking customer base, so an English-only site wasn't good enough.</li>
+        <li><strong>Budget.</strong> This is a small family business. The goal was to keep recurring costs at effectively $0, with the domain name as the only real expense.</li>
+      </ul>
+      <div class="stat-row">
+        <div class="card stat">
+          <span class="stat-num">104</span>
+          <span class="stat-label">Menu items across 18 categories</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-num">2</span>
+          <span class="stat-label">Languages, one set of pages</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-num">$0</span>
+          <span class="stat-label">Monthly hosting and backend cost</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= MILESTONE 1 ================= -->
+    <section class="container">
+      <p class="section-label">Milestone 1</p>
+      <h2>Organizing 104 Menu Items So People Can Actually Find Things</h2>
+      <p>
+        A flat list of 18 categories in a top nav is already a lot to scan, and I didn't
+        want to just guess at ordering. I read into eye-tracking research on how people
+        scan digital menus, the <em>serial position effect</em> (items at the start and
+        end of a list get more attention than the middle), and the <em>mere
+        categorization effect</em> (grouping items, even loosely, makes a large menu feel
+        more navigable without removing anything).
+      </p>
+      <div class="stat-row">
+        <div class="card stat">
+          <span class="stat-num">18 → 7</span>
+          <span class="stat-label">Flat nav links consolidated into grouped dropdowns</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-num">1</span>
+          <span class="stat-label">Sticky sidebar that always shows where you are</span>
+        </div>
+      </div>
+      <p>
+        That research drove two concrete decisions: a persistent sidebar built with
+        <code>position: sticky</code> and the <code>IntersectionObserver</code> API, so
+        it always highlights the category you're scrolled to, and later a restructure of
+        the top navigation from 18 flat links into 7 grouped dropdown clusters (like
+        "Tacos &amp; Enchiladas" and "Soups &amp; Salads"), so a first-time visitor isn't
+        hit with 18 equally weighted choices at once.
+      </p>
+      <p>
+        It held up under real edge cases too. Reordering categories mid-project (moving
+        Soups and Salads next to Entrees once I realized they work as full meals, not
+        light starters) meant re-verifying the sidebar's highlighting logic, including
+        the tricky case of the last category on the page, which can't always scroll to
+        the same on-screen position as the others.
+      </p>
+    </section>
+
+    <!-- ================= MILESTONE 2 ================= -->
+    <section class="container">
+      <p class="section-label">Milestone 2</p>
+      <h2>A Real English/Spanish Toggle, Without Two Copies of the Site</h2>
+      <p>
+        Rather than maintain two separate sets of pages, every piece of text got a paired
+        <code>&lt;span lang="en"&gt;</code> and <code>&lt;span lang="es" hidden&gt;</code>,
+        with a single CSS rule and a small JavaScript toggle flipping which one shows.
+        The choice is saved in <code>localStorage</code>, so it survives navigating
+        between pages, and a small inline script runs before the page paints so there's
+        no flash of the wrong language on load.
+      </p>
+      <div class="stat-row">
+        <div class="card stat">
+          <span class="stat-num">104</span>
+          <span class="stat-label">Menu items translated, plus nav, footer, and hours</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-num">1</span>
+          <span class="stat-label">Shared toggle across every page</span>
+        </div>
+      </div>
+      <p>
+        The more interesting bug showed up after the feature already worked. Switching
+        to Spanish, then accepting Chrome's built-in "translate this page" offer, then
+        switching back to English inside the site could blank the entire page. Chrome's
+        translator rewrites text nodes directly in the live DOM, and any of the site's
+        own JavaScript that expects those nodes to be exactly as it left them (menus,
+        carousels, the hours widget) can throw errors once they've been silently swapped
+        out.
+      </p>
+      <p>
+        The fix wasn't patching around it. It was telling the browser not to offer its
+        own translation on this site at all
+        (<code>&lt;meta name="google" content="notranslate"&gt;</code> plus
+        <code>translate="no"</code> on the <code>&lt;html&gt;</code> tag), since the site
+        already ships a deliberate, human-reviewed translation of its own.
+      </p>
+    </section>
+
+    <!-- ================= MILESTONE 3 ================= -->
+    <section class="container">
+      <p class="section-label">Milestone 3</p>
+      <h2>A Real Backend, on a Static Site, for $0/Month</h2>
+      <p>
+        A fully static site has nowhere to send a contact form. Rather than bolt on a
+        third-party form service, I built a small serverless function. It runs only when
+        the form is submitted, checks a hidden honeypot field to silently reject spam
+        bots, validates that the required fields are filled in, and then calls Resend's
+        API to deliver the message as a real email.
+      </p>
+      <div class="stat-row">
+        <div class="card stat">
+          <span class="stat-num">$0</span>
+          <span class="stat-label">Per month, on free tiers</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-num">0</span>
+          <span class="stat-label">Secrets committed to the repo</span>
+        </div>
+      </div>
+      <p>
+        The API key that authorizes those emails lives as an environment variable in
+        Netlify's dashboard, never in a file in the repository. That distinction
+        matters: a secret committed to git never fully disappears without rewriting
+        history, even if a later commit deletes it, whereas an environment variable was
+        never part of the code to begin with.
+      </p>
+      <p>
+        Getting real mail delivery working also meant verifying domain ownership with
+        Resend through DNS records (standard email-authentication records, the same
+        family as SPF and DKIM). Resend's free tier can't send to an arbitrary inbox
+        until the sending domain is verified, which is what pushed the custom domain
+        purchase earlier than originally planned.
+      </p>
+    </section>
+
+    <!-- ================= MILESTONE 4 ================= -->
+    <section class="container">
+      <p class="section-label">Milestone 4</p>
+      <h2>Going Live: Domain, DNS, and a Security Trade-off</h2>
+      <p>
+        Before buying a domain, I checked whether it was actually available, and found
+        that <em>angiesmexicanrestaurant.com</em> already belonged to a completely
+        unrelated "Angie's Mexican Restaurant" in Conroe, TX. Including the city
+        (<em>angiesmexicanaustin.com</em>) turned out to be more than a workaround. It's
+        also a small, free local-SEO signal for anyone searching "Mexican restaurant
+        Austin."
+      </p>
+      <div class="stat-row">
+        <div class="card stat">
+          <span class="stat-num">1</span>
+          <span class="stat-label">Same-name restaurant already holding the obvious .com</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-num">On</span>
+          <span class="stat-label">DNSSEC kept enabled instead of disabled for convenience</span>
+        </div>
+      </div>
+      <p>
+        Connecting the domain to Netlify meant adding DNS records at the registrar, on
+        top of the ones already added for Resend. Netlify's recommended record type (an
+        ALIAS/ANAME record) was blocked because the domain has DNSSEC enabled, and the
+        registrar doesn't allow ALIAS records on a DNSSEC-protected zone. Rather than
+        turning off a real security feature to use the "nicer" option, I used Netlify's
+        documented fallback, a plain A record pointing at their load balancer, which is
+        the supported path for exactly this situation.
+      </p>
+    </section>
+
+    <!-- ================= TECH SUMMARY ================= -->
+    <section class="container">
+      <p class="section-label">Tech</p>
+      <h2>Tech Summary</h2>
+      <div class="table-wrap">
+        <table class="results tech-table">
+          <thead>
+            <tr><th>Feature</th><th>How it's built</th><th>Why this approach</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Frontend</td><td>Plain HTML, CSS, JavaScript, no framework</td><td>Full understanding of every line, for a real client project</td></tr>
+            <tr><td>Theming</td><td>CSS custom properties + <code>prefers-color-scheme</code></td><td>One source of truth for light and dark colors</td></tr>
+            <tr><td>Category navigation</td><td>Sticky sidebar with <code>IntersectionObserver</code>, plus a grouped dropdown menu</td><td>Matches research on how people scan long lists; keeps 104 items browsable</td></tr>
+            <tr><td>Bilingual content</td><td>Paired <code>lang="en"</code> / <code>lang="es"</code> spans, one JS toggle, <code>localStorage</code></td><td>One set of files instead of two; the choice persists across pages</td></tr>
+            <tr><td>Contact form</td><td>Netlify serverless function calling the Resend email API</td><td>A static site has no server; a function only runs on demand</td></tr>
+            <tr><td>Secrets</td><td>Resend API key stored as a Netlify environment variable</td><td>Keeps the key out of git history entirely</td></tr>
+            <tr><td>Hosting &amp; deploy</td><td>Netlify, auto-deploying from GitHub on every push</td><td>Free tier covers the traffic; deploy history comes with git</td></tr>
+            <tr><td>Domain &amp; DNS</td><td>Custom domain with records split between Resend (email) and Netlify (hosting)</td><td>Kept DNSSEC enabled; used the documented fallback</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= LEARNED ================= -->
+    <section class="container">
+      <h2>What I Learned</h2>
+      <p>
+        Two bug patterns kept recurring, and both taught me more than the features they
+        were hiding inside. The first was simple but persistent: three HTML files that
+        were supposed to match in structure (a stylesheet link, a script tag, a nav
+        update) would quietly drift apart, because a change on one page didn't
+        automatically reach the other two. The second was subtler: CSS specificity
+        conflicts, where an older, more general rule kept silently overriding a newer,
+        more specific one, so a fix would look correct in the code and still not show up
+        on the page. Both taught me the same lesson: "the code looks right" and "the code
+        is right" are different claims, and only one is worth trusting.
+      </p>
+      <p>
+        That pushed me toward verifying things concretely instead of eyeballing them:
+        sampling rendered pixel colors to confirm real WCAG contrast ratios, writing
+        small scripts to extract and diff translated content against a reference table
+        instead of proofreading 104 items by eye, and stress-testing the homepage image
+        carousel by clicking through it rapidly on purpose. That surfaced a real race
+        condition where overlapping animations could leave two slides marked active at
+        once. I fixed it with an explicit lock tied to the browser's actual
+        <code>transitionend</code> event instead of a guessed timeout, then verified it
+        with clicks landing a few milliseconds on either side of the transition's real
+        boundary.
+      </p>
+    </section>
+
+    <!-- ================= NEXT ================= -->
+    <section class="container">
+      <h2>What Comes Next</h2>
+      <p>
+        A few menu items still need written descriptions, along with their Spanish
+        translations once that text exists. After that, the natural next step is a
+        dedicated proofreading pass on the Spanish content, mirroring the consistency
+        pass already done on the English side.
+      </p>
+      <a href="../index.html#projects" class="btn back-btn">← Back to Projects</a>
+    </section>
+
+  </main>
+
+  <footer class="container footer">
+    <p>© 2026 Bryan Escalante</p>
+  </footer>
+
+</body>
+</html>

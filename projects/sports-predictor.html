@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sports Predictor Case Study · Bryan Escalante</title>
+  <meta name="description" content="Case study: a soccer prediction system for seven leagues that benchmarks its predictions against real prediction-market and sportsbook prices.">
+  <meta property="og:title" content="Can a Model Find Mispriced Soccer Odds? · Bryan Escalante">
+  <meta property="og:description" content="A soccer prediction system that checks its own guesses against real market prices, and is honest when it doesn't win.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+  <!-- ================= NAV ================= -->
+  <header class="nav">
+    <div class="container nav-inner">
+      <a href="../index.html" class="logo">BE</a>
+      <nav>
+        <a href="../index.html#about">About</a>
+        <a href="../index.html#experience">Experience</a>
+        <a href="../index.html#projects">Projects</a>
+        <a href="../index.html#skills">Skills</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="case">
+
+    <!-- ================= TITLE ================= -->
+    <section class="container case-hero">
+      <a href="../index.html#projects" class="back-link">← Back to Projects</a>
+      <p class="eyebrow">Case Study · Machine Learning</p>
+      <h1>Can a Model Find Mispriced Soccer Odds?</h1>
+      <p class="case-subtitle">
+        A prediction system for seven soccer leagues that checks its own guesses
+        against real prediction-market and sportsbook prices, and is honest when it doesn't win.
+      </p>
+      <div class="tags">
+        <span>Python</span><span>scikit-learn</span><span>SQLite</span><span>REST APIs</span><span>Linux / cron</span><span>DigitalOcean</span>
+      </div>
+      <p class="case-note">Private repo · code available on request</p>
+    </section>
+
+    <!-- ================= BACKGROUND ================= -->
+    <section class="container">
+      <h2>Background &amp; Motivation</h2>
+      <p>
+        I wanted to know whether a model I built myself could find real value in
+        sports betting markets, specifically on Kalshi and Polymarket, the two
+        prediction-market platforms I'd actually be able to use as a U.S.-based bettor.
+        Rather than just building a predictor and assuming it was good, I wanted the
+        project to answer a harder, more honest question: does this model's opinion
+        actually disagree with the market in a way that holds up statistically, or does
+        it just look good on a handful of games?
+      </p>
+      <p>
+        That question shaped almost every decision in the project: the data pipeline,
+        the choice of models, and eventually a whole statistical layer whose only job is
+        to say "not enough evidence yet" when that's the true answer.
+      </p>
+    </section>
+
+    <!-- ================= DATA ================= -->
+    <section class="container">
+      <h2>The Data</h2>
+      <p>The system pulls from several sources, each solving a different gap:</p>
+      <ul class="case-list">
+        <li><strong>Historical results:</strong> API-Football (2022–2024) and football-data.org for five European domestic leagues (Premier League, La Liga, Bundesliga, Serie A, Ligue 1), plus the World Cup, Euro, and Copa América.</li>
+        <li><strong>MLS and Liga MX:</strong> ESPN's public but undocumented API, since neither league was available on my other free-tier sources.</li>
+        <li><strong>Team strength:</strong> ClubElo for the European leagues, and a community-maintained MLS Elo dataset (9,321 matches, 1996–present) that I verified against known results before trusting it.</li>
+        <li><strong>Market prices:</strong> The Odds API (traditional sportsbooks, moneyline and totals) and Kalshi, a real prediction-market exchange where contract prices are literally probabilities.</li>
+      </ul>
+
+      <div class="stat-row">
+        <div class="card stat">
+          <span class="stat-num">6,975</span>
+          <span class="stat-label">Fixtures in the database</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-num">529</span>
+          <span class="stat-label">Teams tracked</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-num">563,736</span>
+          <span class="stat-label">Team Elo rating rows</span>
+        </div>
+      </div>
+
+      <p>
+        Each European league has three full backfilled seasons (2023–2025) plus the
+        current season as it plays out, roughly 1,140 matches each for the 20-team
+        leagues and 918 for the 18-team ones.
+      </p>
+      <p>
+        Everything lives in a single SQLite database, with the canonical copy on a
+        $4/month cloud server. Scheduled jobs pull new results and fresh odds every
+        6 hours, and a 10-minute "intensifier" job watches for matches within 90 minutes
+        of kickoff to capture closing-line odds movement. My laptop and desktop sync down
+        to work locally and push changes back up. The server, not my computer, is the
+        source of truth.
+      </p>
+    </section>
+
+    <!-- ================= MILESTONE 1 ================= -->
+    <section class="container">
+      <p class="section-label">Milestone 1</p>
+      <h2>Two Ways to Predict a Match, and a Blind Spot in One</h2>
+      <p>
+        I built two separate models: a Random Forest classifier that predicts
+        home/draw/away directly, and a "goal-rate" model that predicts each team's
+        expected goals (using two Poisson regressions) and derives every other
+        probability, including win/draw/loss, both-teams-to-score, and over/under, from
+        the resulting scoreline grid.
+      </p>
+      <div class="stat-row">
+        <div class="card stat">
+          <span class="stat-num">0%</span>
+          <span class="stat-label">Draw recall for the Random Forest</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-num">7 / 7</span>
+          <span class="stat-label">Competitions where it never picked a draw</span>
+        </div>
+      </div>
+      <p>
+        The Random Forest predicted a draw as the most likely outcome 0% of the time,
+        in every one of the 7 competitions tested. The cause turned out to be
+        structural, not a bug: a draw probability sits in the middle of a three-way
+        spread, so it almost never wins as the single most-likely pick, no matter how
+        the model is trained. The goal-rate model did only modestly better. This pushed
+        the whole project toward treating the calibrated probability as the real
+        output, not just whichever outcome the model ranks first.
+      </p>
+    </section>
+
+    <!-- ================= MILESTONE 2 ================= -->
+    <section class="container">
+      <p class="section-label">Milestone 2</p>
+      <h2>Bugs That Would Have Quietly Given the Wrong Answer</h2>
+      <p>
+        Three bugs stand out because none of them crashed anything. They just would
+        have produced plausible-looking, wrong results:
+      </p>
+      <ul class="case-list">
+        <li><strong>Penalty shootouts counted as goals.</strong> A World Cup fixture's score included shootout goals rather than the 90-minute result, mislabeling 3 real draws as wins or losses in the training data.</li>
+        <li><strong>The wrong model for the wrong league.</strong> Once MLS matches entered the evaluation pipeline, the code would have silently kept scoring them with the international-only model, without ever throwing an error. I fixed it with explicit per-league routing that now fails loudly instead of guessing.</li>
+        <li><strong>A silent solver failure.</strong> An unscaled input caused the goal-rate model's solver to diverge on international matches, producing flat predictions that made it look like team strength didn't help. Adding feature scaling fixed it, and confirmed the original theory had been right all along.</li>
+      </ul>
+      <div class="stat-row">
+        <div class="card stat">
+          <span class="stat-num">3</span>
+          <span class="stat-label">Silent bugs caught before they skewed results</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-num">0</span>
+          <span class="stat-label">Crashes or errors from any of them</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= MILESTONE 3 ================= -->
+    <section class="container">
+      <p class="section-label">Milestone 3</p>
+      <h2>Making Every Model Change Earn Its Place</h2>
+      <p>
+        Rather than trusting a model change because it "looked" better, I built a
+        resampling-based statistical test that a change has to clear before I adopt it:
+        both a high win rate across resamples and a confidence interval that doesn't
+        include zero.
+      </p>
+      <div class="stat-row">
+        <div class="card stat">
+          <span class="stat-num">1,000</span>
+          <span class="stat-label">Bootstrap resamples per comparison</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-num">1 of 6</span>
+          <span class="stat-label">Leagues where Dixon-Coles was adopted</span>
+        </div>
+      </div>
+      <p>
+        I tested a known refinement, the Dixon-Coles correlation correction, across all
+        6 leagues with enough data. It was adopted for only 1 of 6, the Premier League,
+        and even there the evidence was marginal, not decisive. Every other league failed
+        the bar outright, including one case where the fitted correction parameter
+        flipped sign entirely depending on which matches happened to be sampled. That's a
+        clear sign of noise being mistaken for a pattern, and I would have missed it
+        without testing this rigorously.
+      </p>
+    </section>
+
+    <!-- ================= MILESTONE 4 ================= -->
+    <section class="container">
+      <p class="section-label">Milestone 4</p>
+      <h2>Comparing Real Predictions to Real Market Prices</h2>
+      <p>
+        I locked in predictions for specific future matches before they were played,
+        then compared them against real Kalshi and sportsbook prices once the games
+        finished.
+      </p>
+      <div class="stat-row">
+        <div class="card stat">
+          <span class="stat-num">98%</span>
+          <span class="stat-label">Model beat market · World Cup, n = 7 (too small to trust)</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-num">~74%</span>
+          <span class="stat-label">Market beat model · MLS, n = 28</span>
+        </div>
+      </div>
+      <p>
+        On 7 World Cup knockout matches, the model beat the market on a proper scoring
+        rule in 98% of resamples, but I explicitly flagged this as far too small a
+        sample, on the most heavily scrutinized games in the sport, to mean anything yet.
+        On a growing batch of MLS matches (28 finished, market-linked fixtures), the
+        result flipped: the market beat the model in roughly 74% of resamples.
+      </p>
+      <p>
+        A follow-up investigation into whether the model specifically struggles when the
+        market is very confident looked compelling at first, then fell apart under a
+        targeted test. A handful of dramatic examples isn't the same as a real pattern.
+      </p>
+    </section>
+
+    <!-- ================= RESULTS ================= -->
+    <section class="container">
+      <p class="section-label">Results</p>
+      <h2>Summary of Results</h2>
+      <div class="table-wrap">
+        <table class="results">
+          <thead>
+            <tr><th>Model</th><th>Evaluated On</th><th>Metric</th><th>Score</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Random Forest</td><td>Premier League (held-out season)</td><td>Accuracy</td><td>47.3%</td></tr>
+            <tr><td>Random Forest</td><td>Premier League</td><td>Brier score</td><td>0.631</td></tr>
+            <tr><td>Goal-rate (Poisson)</td><td>Premier League</td><td>Brier score</td><td>0.623</td></tr>
+            <tr><td>Random Forest</td><td>La Liga</td><td>Accuracy</td><td>53.2%</td></tr>
+            <tr><td>Random Forest</td><td>Bundesliga</td><td>Accuracy</td><td>52.0%</td></tr>
+            <tr><td>Goal-rate (Poisson)</td><td>Bundesliga</td><td>Brier score</td><td>0.574 (statistically confirmed better)</td></tr>
+            <tr><td>Random Forest</td><td>MLS (multi-season)</td><td>Accuracy</td><td>51.0%</td></tr>
+            <tr><td>Goal-rate (Poisson)</td><td>MLS</td><td>Accuracy</td><td>49.8%</td></tr>
+            <tr><td>Random Forest</td><td>All 7 competitions</td><td>Draw recall</td><td>0.0%</td></tr>
+            <tr><td>Model vs. market (Brier)</td><td>World Cup holdout, n = 7</td><td>Bootstrap win rate</td><td>98.0% (sample too small)</td></tr>
+            <tr><td>Model vs. market (Brier)</td><td>MLS holdout, n = 28</td><td>Bootstrap win rate</td><td>26.1% (market ahead)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="table-note">
+        Brier score measures how close predicted probabilities are to what actually
+        happened. Lower is better.
+      </p>
+    </section>
+
+    <!-- ================= LEARNED ================= -->
+    <section class="container">
+      <h2>What I Learned</h2>
+      <p>
+        The most valuable thing I built wasn't a model. It was the discipline to stop
+        myself from believing a result I wanted to be true. Small samples produce
+        convincing-looking patterns constantly, and I hit that trap multiple times: a
+        Dixon-Coles fit that looked reasonable until a stability check exposed it as
+        noise, and a "the model struggles against confident markets" story that looked
+        real until I tested it directly. Building a statistical gate that every result
+        has to pass, mine or the market's, was the difference between a project that
+        produces numbers and one that produces honest conclusions.
+      </p>
+      <p>
+        I also learned that most of the real engineering effort in a project like this
+        isn't the model at all. It's the plumbing: reconciling team names across five
+        data sources that all spell things differently, keeping two machines' databases
+        in sync, and catching bugs that don't crash but quietly compute the wrong thing.
+      </p>
+    </section>
+
+    <!-- ================= NEXT ================= -->
+    <section class="container">
+      <h2>What Comes Next</h2>
+      <p>
+        The clearest next step is more data, especially for MLS and Liga MX, where
+        several results are still inconclusive simply because there aren't enough
+        finished, market-linked matches yet. I'd also like to extend the market
+        comparison to more bet types (it currently covers match outcomes and totals) and
+        keep tracking model versus market as a running measurement rather than a
+        one-time check. The whole point of this project is that the answer to "does this
+        work?" should keep getting more certain over time.
+      </p>
+      <a href="../index.html#projects" class="btn back-btn">← Back to Projects</a>
+    </section>
+
+  </main>
+
+  <footer class="container footer">
+    <p>© 2026 Bryan Escalante</p>
+  </footer>
+
+</body>
+</html>
